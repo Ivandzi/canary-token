@@ -1,7 +1,7 @@
 # Canary Token on Go
 An HTTP server that generates unique token decoys and logs attempts to access the tokens (time, IP address)
 # Launch (example)
-go run main.go -port 8080 -json result
+go run main.go -port 8080 -json result.json
 # Execution result
 ![alt text](screen1.png) ![alt text](screen2.png) ![alt text](screen3.png)
 # Flags
