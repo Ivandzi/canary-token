@@ -1,0 +1,7 @@
+*.exe
+*.out
+*.log
+file.txt
+result.json
+.idea/
+.vscode/
