@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -137,17 +138,28 @@ func main() {
 	if jsonFile != "" {
 		loadData(jsonFile)
 	}
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		if jsonFile != "" {
-			saveData(jsonFile)
-		}
-		os.Exit(0)
-	}()
 	http.HandleFunc("/generate", generateTokenHandler)
 	http.HandleFunc("/check", checkTokenHandler)
-	log.Printf("The server is running on port %v", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	srv := &http.Server{
+		Addr: ":" + port,
+	}
+	go func() {
+		log.Printf("The server is running on port %v", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+	log.Printf("Shutting down server...")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("Server forced to shutdown: %v", err)
+	}
+	if jsonFile != "" {
+		saveData(jsonFile)
+	}
+	log.Printf("Server exited properly")
 }
